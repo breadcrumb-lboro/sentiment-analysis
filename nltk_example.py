@@ -25,6 +25,16 @@ neut_content = [('He is alright', 'neutral'),
                 ('He is alright', 'neutral'),
                 ]
 
+fh = open('training_data.csv', 'r')
+
+for i, ln in enumerate(fh.readlines()):
+    cat = ln.split(',')[0]
+    tweet = ln.split(',')[4]
+    if cat == "0":
+        neg_content.append(tweet)
+    elif cat == "4":
+        pos_content.append(tweet)
+
 content = []
 
 for (words, sentiment) in pos_content + neg_content:
@@ -55,7 +65,7 @@ def extract_features(document):
 
 word_features = get_word_features(get_words_in_content(content))
 
-tweet = "I really love you"
+tweet = "So i found out that jeansy didn't make his lecture today but he said he'll make up for it another day"
 
 training_set = nltk.classify.apply_features(extract_features, content)
 
