@@ -2,42 +2,43 @@ import nltk
 from nltk.probability import ELEProbDist
 import nltk.classify.util
 from nltk.classify import NaiveBayesClassifier
+import re
+import os
 
-pos_content = [('I love this car', 'positive'),
-               ('This view is amazing', 'positive'),
-               ('I feel great this morning', 'positive'),
-               ('I am so excited about the concert', 'positive'),
-               ('He is my best friend', 'positive')]
+pos_content = []
 
-neg_content = [('I do not like this car', 'negative'),
-               ('This view is horrible', 'negative'),
-               ('I feel tired this morning', 'negative'),
-               ('I am not looking forward to the concert', 'negative'),
-               ('He is my enemy', 'negative'),
-               ('John is so annoying', 'negative'),
-               ]
+neg_content = []
 
-neut_content = [('He is alright', 'neutral'),
-                ('Todays weather is just right', 'neutral'),
-                ('He is alright', 'neutral'),
-                ('He is alright', 'neutral'),
-                ('He is alright', 'neutral'),
-                ('He is alright', 'neutral'),
-                ]
+neut_content = []
 
 fh = open('training_data.csv', 'r')
 
+count = 0
+print 'Gathering Content...'
 for i, ln in enumerate(fh.readlines()):
-    cat = ln.split(',')[0]
-    tweet = ln.split(',')[4]
+    count += 1
+    if count % 10000 == 0:
+        print str(count) + " Lines"
+    cat = ln.split(',')[0][1:-1]
+    tweet = re.compile(r"@(\w+)").sub('', ln.split(',')[5]).strip()[1:-1]
     if cat == "0":
-        neg_content.append(tweet)
+        neg_content.append((tweet, 'negative'))
     elif cat == "4":
-        pos_content.append(tweet)
+        pos_content.append((tweet, 'positive'))
+    elif cat == "2":
+        neut_content.append((tweet, 'neutral'))
 
 content = []
 
-for (words, sentiment) in pos_content + neg_content:
+tweets = neg_content + pos_content
+
+count = 0
+print 'Filtering Content...'
+for words, sentiment in tweets:
+    count += 1
+
+    if count % 10000 == 0:
+        print str(count) + "/" + str(len(tweets))
     words_filtered = [e.lower() for e in words.split() if len(e) >= 3]
     content.append((words_filtered, sentiment))
 
@@ -63,12 +64,14 @@ def extract_features(document):
     return features
 
 
+print 'Gathering word features...'
 word_features = get_word_features(get_words_in_content(content))
 
-tweet = "So i found out that jeansy didn't make his lecture today but he said he'll make up for it another day"
+tweet = "Jeansy went to the shop today and bought some milk"
 
 training_set = nltk.classify.apply_features(extract_features, content)
 
+print 'Training classifier...'
 classifier = nltk.NaiveBayesClassifier.train(training_set)
 
 print classifier.classify(extract_features(tweet.split()))
